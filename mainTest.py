@@ -1,4 +1,3 @@
-import util
 from FisherLDA import mainFisherLDAtest
 from robustFisherLDA import mainRobustFisherLDAtest
 import numpy as np
@@ -66,13 +65,13 @@ def mainSaveData(dataset = 'sonar'):
     """
 
     # save the right rates into a json file
-    with open('result/' + dataset + 'FisherMean.txt', 'w') as outfile:
+    with open('result/' + dataset + 'FisherMean.txt', 'wb') as outfile:
         pickle.dump(fisherLDA_means.tolist(), outfile)
-    with open('result/' + dataset + 'FisherStd.txt', 'w') as outfile:
+    with open('result/' + dataset + 'FisherStd.txt', 'wb') as outfile:
         pickle.dump(fisherLDA_stds.tolist(), outfile)
-    with open('result/' + dataset + 'RobustFisherMean.txt', 'w') as outfile:
+    with open('result/' + dataset + 'RobustFisherMean.txt', 'wb') as outfile:
         pickle.dump(robustFisherLDA_means.tolist(), outfile)
-    with open('result/' + dataset + 'RobustFisherStd.txt', 'w') as outfile:
+    with open('result/' + dataset + 'RobustFisherStd.txt', 'wb') as outfile:
         pickle.dump(robustFisherLDA_stds.tolist(), outfile)
 
 def mainReadData(dataset = 'sonar'):
@@ -80,18 +79,18 @@ def mainReadData(dataset = 'sonar'):
     alphas = [0.3, 0.4, 0.5, 0.6, 0.7, 0.8]
 
     # load datas
-    with open('result/' + dataset + 'FisherMean.txt', 'r') as infile:
+    with open('result/' + dataset + 'FisherMean.txt', 'rb') as infile:
         fisherLDA_means = pickle.load(infile)
         fisehrLDA_means = np.array(fisherLDA_means)
-    with open('result/' + dataset + 'FisherStd.txt', 'r') as infile:
+    with open('result/' + dataset + 'FisherStd.txt', 'rb') as infile:
         fisherLDA_stds = pickle.load(infile)
         fisherLDA_stds = np.array(fisherLDA_stds)
-    with open('result/' + dataset + 'RobustFisherMean.txt', 'r') as infile:
+    with open('result/' + dataset + 'RobustFisherMean.txt', 'rb') as infile:
         robustFisherLDA_means = pickle.load(infile)
         robustFisherLDA_means = np.array(robustFisherLDA_means)
-    with open('result/' + dataset + 'RobustFisherStd.txt', 'r') as infile:
-        robustFihserLDA_stds = pickle.load(infile)
-        robustFihserLDA_stds = np.array(robustFihserLDA_stds)
+    with open('result/' + dataset + 'RobustFisherStd.txt', 'rb') as infile:
+        robustFisherLDA_stds = pickle.load(infile)
+        robustFisherLDA_stds = np.array(robustFisherLDA_stds)
 
 
     """
@@ -100,8 +99,9 @@ def mainReadData(dataset = 'sonar'):
     plt.fill_between(alphas, fisherLDA_means - fisherLDA_stds,
                      fisherLDA_means + fisherLDA_stds, alpha=0.1,
                      color="r")
-    plt.fill_between(alphas, robustFisherLDA_means - robustFihserLDA_stds,
-                     robustFisherLDA_means + robustFihserLDA_stds, alpha=0.1, color="g")
+    ci_5 = robustFisherLDA_means - robustFisherLDA_stds
+    ci_95 = robustFisherLDA_means + robustFisherLDA_stds
+    plt.fill_between(alphas, ci_5, ci_95, alpha=0.1, color="g") # type: ignore
     plt.plot(alphas, fisherLDA_means, 'o-', color="r",
              label="Fisher LDA")
     plt.plot(alphas, robustFisherLDA_means, '*-', color="g",
@@ -120,7 +120,7 @@ def mainReadData(dataset = 'sonar'):
 
 if __name__ == "__main__":
     dataset = ['ionosphere', 'sonar']  # choose the dataset
-    dataset = dataset[1]
+    dataset = dataset[0]
     #mainSaveData(dataset)
     mainReadData(dataset)
 

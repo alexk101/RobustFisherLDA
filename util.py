@@ -1,5 +1,4 @@
 import random
-import math
 import numpy as np
 
 def divide(dataX, dataY, alpha):
@@ -20,16 +19,16 @@ def divide(dataX, dataY, alpha):
 	dataX2 = []
 	dataY2 = []
 
-	for i in xrange(posNum1):
+	for i in range(posNum1):
 		dataX1.append(positiveX[posOrder[i]])
 		dataY1.append(1)
-	for i in xrange(posNum2):
+	for i in range(posNum2):
 		dataX2.append(positiveX[posOrder[i + posNum1]])
 		dataY2.append(1)
-	for i in xrange(negNum1):
+	for i in range(negNum1):
 		dataX1.append(negativeX[negOrder[i]])
 		dataY1.append(-1)
-	for i in xrange(negNum2):
+	for i in range(negNum2):
 		dataX2.append(negativeX[negOrder[i + negNum1]])
 		dataY2.append(-1)
 
@@ -44,7 +43,7 @@ def resample(dataX, dataY):
 	sampleX = []
 	sampleY = []
 
-	for i in xrange(instances):
+	for i in range(instances):
 		chosen = random.randint(0, instances-1)
 		sampleX.append(dataX[chosen])
 		sampleY.append(dataY[chosen])
@@ -59,7 +58,7 @@ def split(dataX, dataY):
 	positiveX = []
 	negativeX = []
 
-	for i in xrange(instances):
+	for i in range(instances):
 		if dataY[i] == 1:
 			positiveX.append(dataX[i])
 		else:
@@ -67,18 +66,10 @@ def split(dataX, dataY):
 
 	return [positiveX, negativeX]
 
-def F_norm(matrix):
-	'''
-	calculate the Frobenius norm of a matrix i.e |vec(A)|_2
-	'''
-	squared = map(lambda x: x**2, matrix)
-	squared_sum = np.sum(squared)
-	return math.sqrt(squared_sum)
-
 def M_norm(matrix, vector):
 	'''
-	calculate the M-norm of a matrix i.e \sqrt{v.T * M * v}
+	calculate the M-norm of a matrix i.e sqrt{v.T * M * v}
 	'''
 	squared = np.dot(vector.T, np.dot(matrix, vector))
-	return math.sqrt(squared[0][0])
+	return np.sqrt(squared[0][0])
 

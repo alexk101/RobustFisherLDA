@@ -170,7 +170,7 @@ def plot_step_lda(X_trans, y, label_dict, uniqueClass, dataset, threshold):
     for label,marker,color in zip(range(1, len(uniqueClass)+1),('^', 's'),('blue', 'red')):
         plt.scatter(x=X_trans[:,0].real[y == label],
                     y=X_trans[:,1].real[y == label],
-                    marker=marker,
+                    marker=marker, # type: ignore
                     color=color,
                     alpha=0.5,
                     label=label_dict[label]
@@ -217,8 +217,8 @@ def mainFisherLDAtest(dataset='sonar', alpha=0.5):
     # preprocessing
     enc = LabelEncoder()
     label_encoder = enc.fit(y)
-    y = label_encoder.transform(y) + 1
-    testY = label_encoder.transform(testY) + 1
+    y = label_encoder.transform(y) + 1 # type: ignore
+    testY = label_encoder.transform(testY) + 1 # type: ignore
     uniqueClass = np.unique(y) # define how many class in the outputs
     label_dict = {}   # define the label name
     for i in range(1, len(uniqueClass)+1):
@@ -241,7 +241,8 @@ def mainFisherLDAtest(dataset='sonar', alpha=0.5):
 
     # Step 5: Transforming the samples onto the new subspace
     X_trans, mean_vecs_trans = transformToNewSpace(testX, W, sample_no, mean_vectors, uniqueClass)
-
+    print(f'testX: {testX.shape}')
+    print(f'X_trans: {X_trans.shape}')
 
     # Step 6: compute error rate
     accuracy, threshold = computeErrorRate(X_trans, mean_vecs_trans, testY)
@@ -253,12 +254,10 @@ def mainFisherLDAtest(dataset='sonar', alpha=0.5):
     return accuracy
 
 
-
-
 if __name__ == "__main__":
     dataset = ['ionosphere', 'sonar']  # choose the dataset
     alpha = 0.6 # choose the train data percentage
     accuracy = mainFisherLDAtest(dataset[1], alpha)
-    print accuracy
+    print(accuracy)
 
 

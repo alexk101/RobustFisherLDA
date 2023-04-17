@@ -7,13 +7,10 @@ class loader(object):
         self.split_token = split_token
 
     def load(self):
-        df = pd.io.parsers.read_csv(
-        filepath_or_buffer = self.file_name,
-                            header = None,
-                            sep = self.split_token)
+        df = pd.read_csv(self.file_name, header = None, sep = self.split_token)
 
         self.dimension = df.shape[1]-1
-        df.columns = range(self.dimension) + ['label']
+        df.columns = list(range(self.dimension)) + ['label']
         df.dropna(how = 'all', inplace = True) # to drop the empty line at file-end
         df.tail()
 
@@ -24,11 +21,11 @@ class loader(object):
         if len(distinct_label) != 2:
             raise Exception('Two Labels Required\n','Label Sets:\n',distinct_label)
 
-        self.Y = map(lambda x: {distinct_label[0]:1, distinct_label[1]:-1}[x], self.Y)
+        self.Y = list(map(lambda x: {distinct_label[0]:1, distinct_label[1]:-1}[x], self.Y))
 
         return [self.X, self.Y]
 
 if __name__ == "__main__":
-    loader = loader('ionosphere/ionosphere.data')
-    [X, y] = loader.load()
-    print X.shape
+    loader_test = loader('ionosphere/ionosphere.data')
+    [X, y] = loader_test.load()
+    print(X.shape)

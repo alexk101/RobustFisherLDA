@@ -1,0 +1,13 @@
+name: RFLDA
+channels:
+  - conda-forge
+dependencies:
+  - python=3.11
+  - cvxopt
+  - ca-certificates
+  - openssl
+  - pandas
+  - matplotlib
+  - numpy
+  - scikit-learn
+  - certifi
