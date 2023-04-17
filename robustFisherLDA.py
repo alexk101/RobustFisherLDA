@@ -38,11 +38,11 @@ def estimate(trainX, trainY, resample_num):
 
 	for cov_matrix in sample_pos_covs:
 		dis = np.linalg.norm(cov_matrix - nominal_pos_cov, ord='fro')
-		rho_pos = np.max(dis, rho_pos)
+		rho_pos = max(dis, rho_pos) # type: ignore
 
 	for cov_matrix in sample_neg_covs:
 		dis = np.linalg.norm(cov_matrix - nominal_neg_cov, ord='fro')
-		rho_neg = np.max(dis, rho_neg)
+		rho_neg = max(dis, rho_neg) # type: ignore
 
 	return [nominal_pos_mean, P_pos, nominal_neg_mean, P_neg,
 		nominal_pos_cov, rho_pos, nominal_neg_cov, rho_neg]

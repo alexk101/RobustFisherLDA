@@ -70,6 +70,7 @@ def M_norm(matrix, vector):
 	'''
 	calculate the M-norm of a matrix i.e sqrt{v.T * M * v}
 	'''
-	squared = np.dot(vector.T, np.dot(matrix, vector))
-	return np.sqrt(squared[0][0])
+	squared = vector.T @ matrix @ vector
+	old = np.sqrt(squared[0][0])
+	return old
 
