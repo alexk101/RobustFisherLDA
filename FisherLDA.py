@@ -13,7 +13,7 @@ def computeMeanVec(X, y, uniqueClass):
     np.set_printoptions(precision=4)
 
     mean_vectors = []
-    for cl in range(1,len(uniqueClass)+1):
+    for cl in uniqueClass:
         mean_vectors.append(np.mean(X[y==cl], axis=0))
         log('Mean Vector class %s: %s\n' %(cl, mean_vectors[cl-1]))
     return mean_vectors
@@ -54,8 +54,8 @@ def computeEigenDecom(S_W, S_B, feature_no):
 
     for i in range(len(eig_vals)):
         eigvec_sc = eig_vecs[:,i].reshape(feature_no, 1)
-        log('\nEigenvector {}: \n{}'.format(i+1, eigvec_sc.real))
-        log('Eigenvalue {:}: {:.2e}'.format(i+1, eig_vals[i].real))
+        # log('\nEigenvector {}: \n{}'.format(i+1, eigvec_sc.real))
+        # log('Eigenvalue {:}: {:.2e}'.format(i+1, eig_vals[i].real))
 
     for i in range(len(eig_vals)):
         eigv = eig_vecs[:,i].reshape(feature_no, 1)
@@ -79,16 +79,18 @@ def selectFeature(eig_vals, eig_vecs, feature_no):
 
     log('Eigenvalues in decreasing order:\n')
     for i in eig_pairs:
-        log(i[0])
+        # log(i[0])
+        pass
 
     log('Variance explained:\n')
     eigv_sum = sum(eig_vals)
     for i,j in enumerate(eig_pairs):
-        log('eigenvalue {0:}: {1:.2%}'.format(i+1, (j[0]/eigv_sum).real))
+        # log('eigenvalue {0:}: {1:.2%}'.format(i+1, (j[0]/eigv_sum).real))
+        pass
 
     # 4.2. Choosing k eigenvectors with the largest eigenvalues - here I choose the first two eigenvalues
     W = np.hstack((eig_pairs[0][1].reshape(feature_no, 1), eig_pairs[1][1].reshape(feature_no, 1)))
-    log('Matrix W: \n{}'.format(W.real))
+    # log('Matrix W: \n{}'.format(W.real))
 
     return W
 
@@ -225,9 +227,12 @@ def mainFisherLDAtest(dataset='sonar', alpha=0.5):
         label_dict[i] = "Class"+str(i)
     log(label_dict)
 
+    print(f'x: {X}, {X.shape}')
+    print(f'y: {y}, {y.shape}')
     # Step 1: Computing the d-dimensional mean vectors for different class
+    print(f'unique: {uniqueClass}')
     mean_vectors = computeMeanVec(X, y, uniqueClass)
-
+    print(f'mean_vectors: {mean_vectors}')
 
     # Step 2: Computing the Scatter Matrices
     S_W = computeWithinScatterMatrices(X, y, feature_no, uniqueClass, mean_vectors)
