@@ -38,6 +38,7 @@ def computeBetweenClassScatterMatrices(X, y, feature_no, mean_vectors):
     S_B = np.zeros((feature_no, feature_no))
     for i,mean_vec in enumerate(mean_vectors):
         n = X[y==i+1,:].shape[0]
+        print(f'n: {n}')
         mean_vec = mean_vec.reshape(feature_no, 1) # make column vector
         overall_mean = overall_mean.reshape(feature_no, 1) # make column vector
         S_B += n * (mean_vec - overall_mean).dot((mean_vec - overall_mean).T)

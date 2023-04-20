@@ -1,5 +1,26 @@
+# pyright: reportPrivateImportUsage=false
+
 import random
 import numpy as np
+import jax.numpy as jnp
+import jax
+from jax.experimental import host_callback
+from typing import Tuple
+
+def eig(matrix: jnp.ndarray):
+	def _eig_host(matrix: jnp.ndarray) -> Tuple[jnp.ndarray, jnp.ndarray]:
+		"""Wraps jnp.linalg.eig so that it can be jit-ed on a machine with GPUs."""
+		eigenvalues_shape = jax.ShapeDtypeStruct(matrix.shape[:-1], complex)
+		eigenvectors_shape = jax.ShapeDtypeStruct(matrix.shape, complex)
+		return host_callback.call(
+			# We force this computation to be performed on the cpu by jit-ing and
+			# explicitly specifying the device.
+			jax.jit(jnp.linalg.eig, backend='cpu'),
+			matrix.astype(complex),
+			result_shape=(eigenvalues_shape, eigenvectors_shape),
+		)
+	return jax.jit(_eig_host, device=jax.devices("gpu")[0])(matrix)
+
 
 def divide(dataX, dataY, alpha):
 	'''
