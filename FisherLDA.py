@@ -10,62 +10,44 @@ def computeMeanVec(X, y, uniqueClass):
     """
     Step 1: Computing the d-dimensional mean vectors for different class
     """
-    np.set_printoptions(precision=4)
-
     mean_vectors = []
     for cl in uniqueClass:
-        mean_vectors.append(np.mean(X[y==cl], axis=0))
-        log('Mean Vector class %s: %s\n' %(cl, mean_vectors[cl-1]))
-    return mean_vectors
+        mask = y==cl
+        mean_vectors.append(np.mean(X[mask], axis=0))
+    return np.stack(mean_vectors)
+
 
 def computeWithinScatterMatrices(X, y, feature_no, uniqueClass, mean_vectors):
     # 2.1 Within-class scatter matrix
     S_W = np.zeros((feature_no, feature_no))
-    for cl,mv in zip(range(1,len(uniqueClass)+1), mean_vectors):
-        class_sc_mat = np.zeros((feature_no, feature_no))  # scatter matrix for every class
+    for cl, mv in zip(uniqueClass, mean_vectors):
         for row in X[y == cl]:
-            row, mv = row.reshape(feature_no,1), mv.reshape(feature_no,1)   # make column vectors
-            class_sc_mat += (row-mv).dot((row-mv).T)
-        S_W += class_sc_mat                                # sum class scatter matrices
-    log('within-class Scatter Matrix: {}\n'.format(S_W))
-
+            diff = row-mv
+            S_W += np.outer(diff, diff)
     return S_W
 
-def computeBetweenClassScatterMatrices(X, y, feature_no, mean_vectors):
+
+def computeBetweenClassScatterMatrices(X, y, feature_no, mean_vectors, classes):
     # 2.2 Between-class scatter matrix
     overall_mean = np.mean(X, axis=0)
 
     S_B = np.zeros((feature_no, feature_no))
-    for i,mean_vec in enumerate(mean_vectors):
-        n = X[y==i+1,:].shape[0]
-        print(f'n: {n}')
+    for i, mean_vec in zip(classes, mean_vectors): # modified for multiclass
+        n = X[y==i,:].shape[0] # modified for multiclass
         mean_vec = mean_vec.reshape(feature_no, 1) # make column vector
         overall_mean = overall_mean.reshape(feature_no, 1) # make column vector
         S_B += n * (mean_vec - overall_mean).dot((mean_vec - overall_mean).T)
-    log('between-class Scatter Matrix: {}\n'.format(S_B))
-
     return S_B
 
-def computeEigenDecom(S_W, S_B, feature_no):
+
+def computeEigenDecom(S_W, S_B):
     """
     Step 3: Solving the generalized eigenvalue problem for the matrix S_W^-1 * S_B
     """
     m = 10^-6 # add a very small value to the diagonal of your matrix before inversion
     eig_vals, eig_vecs = np.linalg.eig(np.linalg.inv(S_W+np.eye(S_W.shape[1])*m).dot(S_B))
-
-    for i in range(len(eig_vals)):
-        eigvec_sc = eig_vecs[:,i].reshape(feature_no, 1)
-        # log('\nEigenvector {}: \n{}'.format(i+1, eigvec_sc.real))
-        # log('Eigenvalue {:}: {:.2e}'.format(i+1, eig_vals[i].real))
-
-    for i in range(len(eig_vals)):
-        eigv = eig_vecs[:,i].reshape(feature_no, 1)
-        np.testing.assert_array_almost_equal(np.linalg.inv(S_W+np.eye(S_W.shape[1])*m).dot(S_B).dot(eigv),
-                                             eig_vals[i] * eigv,
-                                             decimal=6, err_msg='', verbose=True)
-    log('Eigenvalue Decomposition OK')
-
     return eig_vals, eig_vecs
+
 
 def selectFeature(eig_vals, eig_vecs, feature_no):
     """
@@ -77,36 +59,21 @@ def selectFeature(eig_vals, eig_vecs, feature_no):
 
     # Sort the (eigenvalue, eigenvector) tuples from high to low by the value of eigenvalue
     eig_pairs = sorted(eig_pairs, key=lambda k: k[0], reverse=True)
-
-    log('Eigenvalues in decreasing order:\n')
-    for i in eig_pairs:
-        # log(i[0])
-        pass
-
-    log('Variance explained:\n')
-    eigv_sum = sum(eig_vals)
-    for i,j in enumerate(eig_pairs):
-        # log('eigenvalue {0:}: {1:.2%}'.format(i+1, (j[0]/eigv_sum).real))
-        pass
-
     # 4.2. Choosing k eigenvectors with the largest eigenvalues - here I choose the first two eigenvalues
-    W = np.hstack((eig_pairs[0][1].reshape(feature_no, 1), eig_pairs[1][1].reshape(feature_no, 1)))
-    # log('Matrix W: \n{}'.format(W.real))
-
+    W = np.hstack([eig_pairs[x][1].reshape(eig_vecs.shape[0], 1) for x in range(feature_no)])
     return W
 
-def transformToNewSpace(X, W, sample_no, mean_vectors, uniqueClass):
+
+def transformToNewSpace(X, W, mean_vectors):
     """
     Step 5: Transforming the samples onto the new subspace
     """
     X_trans = X.dot(W)
     mean_vecs_trans = []
-    for i in range(len(uniqueClass)):
-        mean_vecs_trans.append(mean_vectors[i].dot(W))
+    for mv in mean_vectors:
+        mean_vecs_trans.append(mv.dot(W))
+    return X_trans, np.array(mean_vecs_trans)
 
-    #assert X_trans.shape == (sample_no,2), "The matrix is not size of (sample number, 2) dimensional."
-
-    return X_trans, mean_vecs_trans
 
 def computeErrorRate(X_trans, mean_vecs_trans, y):
     """
@@ -165,8 +132,6 @@ def computeErrorRate(X_trans, mean_vecs_trans, y):
     return 1-errorRate, threshold
 
 
-
-
 def plot_step_lda(X_trans, y, label_dict, uniqueClass, dataset, threshold):
 
     ax = plt.subplot(111)
@@ -205,6 +170,7 @@ def plot_step_lda(X_trans, y, label_dict, uniqueClass, dataset, threshold):
     #plt.tight_layout
     plt.show()
 
+
 def mainFisherLDAtest(dataset='sonar', alpha=0.5):
     # load data
     path = dataset + '/' + dataset + '.data'
@@ -237,16 +203,16 @@ def mainFisherLDAtest(dataset='sonar', alpha=0.5):
 
     # Step 2: Computing the Scatter Matrices
     S_W = computeWithinScatterMatrices(X, y, feature_no, uniqueClass, mean_vectors)
-    S_B = computeBetweenClassScatterMatrices(X, y, feature_no, mean_vectors)
+    S_B = computeBetweenClassScatterMatrices(X, y, feature_no, mean_vectors, uniqueClass)
 
     # Step 3: Solving the generalized eigenvalue problem for the matrix S_W^-1 * S_B
-    eig_vals, eig_vecs = computeEigenDecom(S_W, S_B, feature_no)
+    eig_vals, eig_vecs = computeEigenDecom(S_W, S_B)
 
     # Step 4: Selecting linear discriminants for the new feature subspace
     W = selectFeature(eig_vals, eig_vecs, feature_no)
 
     # Step 5: Transforming the samples onto the new subspace
-    X_trans, mean_vecs_trans = transformToNewSpace(testX, W, sample_no, mean_vectors, uniqueClass)
+    X_trans, mean_vecs_trans = transformToNewSpace(testX, W, mean_vectors)
     print(f'testX: {testX.shape}')
     print(f'X_trans: {X_trans.shape}')
 
