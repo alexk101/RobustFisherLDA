@@ -140,20 +140,30 @@ def transformToNewSpace(X, W, mean_vectors):
 class LDA:
     def __init__(self, X, y, n):
         self.X = X
-        self.y = y
+
+        if issubclass(y.dtype.type, jnp.integer):
+            self.y = y
+        else:
+            org_labels = np.unique(y)
+            self.label_map = {x:label for x, label in zip(range(len(org_labels)), org_labels)}
+            self.unq = jnp.array(list(self.label_map.keys()), dtype=jnp.int32)
+            new_y = np.zeros(y.size, dtype=jnp.int32)
+            for label, org in self.label_map.items():
+                new_y[y==org]=label
+            self.y = jnp.array(new_y)
         self.n = n
-        self.unq = jnp.unique(y)
-        self.mask = get_mask(y, self.unq)
+        
+        self.mask = get_mask(self.y, self.unq)
 
     def fit(self):
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
-            mean_vectors = computeMeanVec(X, self.mask.T)
-            within = computeWithinScatterMatrices(X, self.mask, mean_vectors, self.X.shape[1])
-            between = computeBetweenClassScatterMatrices(X, y, mean_vectors, self.unq, self.X.shape[1])
+            mean_vectors = computeMeanVec(self.X, self.mask.T)
+            within = computeWithinScatterMatrices(self.X, self.mask, mean_vectors, self.X.shape[1])
+            between = computeBetweenClassScatterMatrices(self.X, self.y, mean_vectors, self.unq, self.X.shape[1])
             e_val, e_vec = FisherLDA.computeEigenDecom(within, between)
             W = FisherLDA.selectFeature(e_val, e_vec, self.n)
-            red, means_red = transformToNewSpace(X, W, mean_vectors)
+            red, means_red = transformToNewSpace(self.X, W, mean_vectors)
             return red
 
 
@@ -170,7 +180,7 @@ if __name__ == "__main__":
         y = []
         for c, mean in zip(range(classes), means):
             X.append(np.random.normal(mean, size=(samples,features)))
-            y.append(np.full(samples, c))
+            y.append(np.full(samples, f'test{c}'))
         X = np.vstack(X)
         y = np.concatenate(y)
 
