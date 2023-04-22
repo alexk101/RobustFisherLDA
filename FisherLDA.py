@@ -46,7 +46,8 @@ def computeEigenDecom(S_W, S_B):
     """
     m = 10^-6 # add a very small value to the diagonal of your matrix before inversion
     eig_vals, eig_vecs = np.linalg.eig(np.linalg.inv(S_W+np.eye(S_W.shape[1])*m).dot(S_B))
-    return eig_vals, eig_vecs
+    ex_var = (eig_vals / np.sum(eig_vecs))*100
+    return eig_vals, eig_vecs, ex_var
 
 
 def selectFeature(eig_vals, eig_vecs, feature_no):
@@ -206,7 +207,7 @@ def mainFisherLDAtest(dataset='sonar', alpha=0.5):
     S_B = computeBetweenClassScatterMatrices(X, y, feature_no, mean_vectors, uniqueClass)
 
     # Step 3: Solving the generalized eigenvalue problem for the matrix S_W^-1 * S_B
-    eig_vals, eig_vecs = computeEigenDecom(S_W, S_B)
+    eig_vals, eig_vecs, ex_var = computeEigenDecom(S_W, S_B)
 
     # Step 4: Selecting linear discriminants for the new feature subspace
     W = selectFeature(eig_vals, eig_vecs, feature_no)

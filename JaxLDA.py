@@ -95,8 +95,11 @@ def computeEigenDecom(S_W, S_B):
     Step 3: Solving the generalized eigenvalue problem for the matrix S_W^-1 * S_B
     """
     m = 10^-6 # add a very small value to the diagonal of your matrix before inversion
-    eig_vals, eig_vecs = util.eig(jnp.linalg.inv(S_W+jnp.eye(S_W.shape[1])*m).dot(S_B))
-    return jnp.real(eig_vals), eig_vecs
+    inv = jnp.linalg.inv(S_W+jnp.eye(S_W.shape[1])*m).dot(S_B)
+    eig_vectors, eig_values, _ = jnp.linalg.svd(inv)
+    ex_var = (eig_values / jnp.sum(eig_values))*100
+    # eig_vals, eig_vecs = util.eig(jnp.linalg.inv(S_W+jnp.eye(S_W.shape[1])*m).dot(S_B))
+    return eig_values, eig_vectors, ex_var
 
 
 ### End computeEigenDecom ###
@@ -122,7 +125,7 @@ def selectFeature(eig_vals, eig_vecs, feature_no):
 ### End selectFeature ### 
 
 ### Start transformToNewSpace ###
-
+@jit
 def transformToNewSpace(X, W, mean_vectors):
     """
     Step 5: Transforming the samples onto the new subspace
@@ -161,8 +164,12 @@ class LDA:
             mean_vectors = computeMeanVec(self.X, self.mask.T)
             within = computeWithinScatterMatrices(self.X, self.mask, mean_vectors, self.X.shape[1])
             between = computeBetweenClassScatterMatrices(self.X, self.y, mean_vectors, self.unq, self.X.shape[1])
-            e_val, e_vec = FisherLDA.computeEigenDecom(within, between)
+            e_val, e_vec, ex_var = computeEigenDecom(within, between)
+            print(f'e_val: {e_val.shape}')
+            print(f'e_vec: {e_vec.shape}')
             W = FisherLDA.selectFeature(e_val, e_vec, self.n)
+            print(W.shape)
+            print(self.X.shape)
             red, means_red = transformToNewSpace(self.X, W, mean_vectors)
             return red
 

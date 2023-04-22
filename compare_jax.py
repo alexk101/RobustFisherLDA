@@ -55,7 +55,7 @@ def benchmark():
     mean_org = FisherLDA.computeMeanVec(X_np, y_np, n_np)
     np_within = FisherLDA.computeWithinScatterMatrices(X_np, y_np, features, n_np, mean_org)
     np_between = FisherLDA.computeBetweenClassScatterMatrices(X_np, y_np, features, mean_org, n_np)
-    np_e_val, np_e_vec = FisherLDA.computeEigenDecom(np_within, np_between)
+    np_e_val, np_e_vec, np_ex_var = FisherLDA.computeEigenDecom(np_within, np_between)
     np_W = FisherLDA.selectFeature(np_e_val, np_e_vec, red)
     np_red = FisherLDA.transformToNewSpace(X_np, np_W, mean_org)
 
@@ -69,7 +69,7 @@ def benchmark():
     mask = JaxLDA.get_mask(y_jax,n_jax)
     jax_within = JaxLDA.computeWithinScatterMatrices(X_jax, mask, mean_vectors, features)
     jax_between = JaxLDA.computeBetweenClassScatterMatrices(X_jax, y_jax, mean_vectors, n_jax, features)
-    jax_e_val, jax_e_vec = JaxLDA.computeEigenDecom(jax_within, jax_between)
+    jax_e_val, jax_e_vec, jax_ex_var = JaxLDA.computeEigenDecom(jax_within, jax_between)
     jax_W = JaxLDA.selectFeature(np_e_val, np_e_vec, red)
     jax_red = JaxLDA.transformToNewSpace(X_jax, jax_W, mean_vectors)
 
