@@ -34,7 +34,6 @@ def init_tol(D: jnp.ndarray):
 # https://re-ra.xyz/Differences-of-SVD-methods-in-numpy,-tensorflow-and-pytorch/#differences
 @jit
 def svd_threshold(M, tau):
-    print(M.shape)
     U, s, V = jnp.linalg.svd(M, full_matrices=False)
     return jnp.matmul(U, jnp.matmul(jnp.diag(shrink(s, tau)), V))
 
