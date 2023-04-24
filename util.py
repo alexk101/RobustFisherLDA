@@ -53,7 +53,12 @@ def divide(dataX, dataY, alpha):
 		dataX2.append(negativeX[negOrder[i + negNum1]])
 		dataY2.append(-1)
 
-	return [dataX1, dataY1, dataX2, dataY2]
+	dataX1 = jnp.array(dataX1)
+	dataY1 = jnp.array(dataY1)
+	dataX2 = jnp.array(dataX2)
+	dataY2 = jnp.array(dataY2)
+
+	return dataX1, dataY1, dataX2, dataY2
 
 def resample(dataX, dataY):
 	'''
@@ -85,13 +90,8 @@ def split(dataX, dataY):
 		else:
 			negativeX.append(dataX[i])
 
-	return [positiveX, negativeX]
+	positiveX = jnp.array(positiveX)
+	negativeX = jnp.array(negativeX)
 
-def M_norm(matrix, vector):
-	'''
-	calculate the M-norm of a matrix i.e sqrt{v.T * M * v}
-	'''
-	squared = vector.T @ matrix @ vector
-	old = np.sqrt(squared[0][0])
-	return old
+	return positiveX, negativeX
 

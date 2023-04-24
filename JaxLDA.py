@@ -5,14 +5,12 @@ from jax import vmap, jit
 import jax.numpy as jnp
 import numpy as np
 from functools import partial
-import util
-import warnings
 import seaborn as sns
 import pandas as pd
 import matplotlib.pyplot as plt
 import FisherLDA
 
-### ComputeMeanVec ###
+
 @jit
 def get_mask(y: jnp.ndarray, n: jnp.ndarray):
     def _get_mask(y: jnp.ndarray, n: jnp.ndarray):
@@ -21,33 +19,20 @@ def get_mask(y: jnp.ndarray, n: jnp.ndarray):
     vmapMask = vmap(_get_mask, in_axes=(None,0))
     return vmapMask(y, n)
 
+
 @jit
 def computeMeanVec(X: jnp.ndarray, mask: jnp.ndarray) -> jnp.ndarray:
-    """Compues the d-dimensional mean vectors for the class defined by mask
-
-    Args:
-        X (jnp.ndarray): Feature matrix
-        mask (jnp.ndarray): Mask defining class membership
-
-    Returns:
-        jnp.ndarray: _description_
-    """
     def _computeMeanVec(X: jnp.ndarray, mask: jnp.ndarray) -> jnp.ndarray:
         return jnp.mean(X, where=mask.reshape(-1,1), axis=0)
     vmapCMV = vmap(_computeMeanVec, in_axes=(None,1))
     return vmapCMV(X, mask)
 
+
 @jit
 def computeAllMeanVec(X, y, n):
-    """
-    Step 1: Computing the d-dimensional mean vectors for different class
-    """
     mask = get_mask(y.reshape(-1,1), n).T
     return computeMeanVec(X,mask)
 
-
-### End ComputeMeanVec ###
-### ComputeWithinScatterMatrix ###
 
 @partial(jit, static_argnames=["f_n"])
 def computeWithinScatterMatrices(X, mask, mv, f_n):
@@ -68,9 +53,6 @@ def computeWithinScatterMatrices(X, mask, mv, f_n):
     jax_bruh_fuck = vmap(jax_bruh_1, in_axes=(0, 0))
     return jnp.sum(jax_bruh_fuck(mask, mv), axis=0)
 
-### End ComputeWithinScatterMatrix ###
-
-### Start computeBetweenClassScatterMatrices ###
 
 @partial(jit, static_argnames=["feature_no"])
 def computeBetweenClassScatterMatrices(X, y, mean_vectors, classes, feature_no):
@@ -84,36 +66,19 @@ def computeBetweenClassScatterMatrices(X, y, mean_vectors, classes, feature_no):
     return jnp.sum(vmapComputeSingleClass(classes, mean_vectors), axis=0)
 
 
-### End computeBetweenClassScatterMatrices ###
-
-### Start computeEigenDecom ###
-
 # Shitter
 @jit
 def computeEigenDecom(S_W, S_B):
-    """
-    Step 3: Solving the generalized eigenvalue problem for the matrix S_W^-1 * S_B
-    """
     m = 10^-6 # add a very small value to the diagonal of your matrix before inversion
     inv = jnp.linalg.inv(S_W+jnp.eye(S_W.shape[1])*m).dot(S_B)
     eig_vectors, eig_values, _ = jnp.linalg.svd(inv)
     ex_var = (eig_values / jnp.sum(eig_values))*100
-    # eig_vals, eig_vecs = util.eig(jnp.linalg.inv(S_W+jnp.eye(S_W.shape[1])*m).dot(S_B))
     return eig_values, eig_vectors, ex_var
 
-
-### End computeEigenDecom ###
-
-## Start selectFeature ### 
 
 # Something very fishy
 @partial(jit, static_argnames=["feature_no"])
 def selectFeature(eig_vals, eig_vecs, feature_no):
-    """
-    Step 4: Selecting linear discriminants for the new feature subspace
-    """
-    # 4.1. Sorting the eigenvectors by decreasing eigenvalues
-    # Make a list of (eigenvalue, eigenvector) tuples
     _, inds = jax.lax.top_k(eig_vals, feature_no)
 
     out_vec = jnp.zeros((eig_vecs.shape[0], feature_no), jnp.float64)
@@ -122,14 +87,9 @@ def selectFeature(eig_vals, eig_vecs, feature_no):
         out_vec = out_vec.at[:,out_ind].set(eig_vecs[:,ind])
     return out_vec
 
-### End selectFeature ### 
 
-### Start transformToNewSpace ###
 @jit
 def transformToNewSpace(X, W, mean_vectors):
-    """
-    Step 5: Transforming the samples onto the new subspace
-    """
     def apply_class(mv):
         return mv.dot(W)
     X_trans = X.dot(W)
@@ -137,8 +97,6 @@ def transformToNewSpace(X, W, mean_vectors):
     mean_vecs_trans = vmapApplyClass(mean_vectors)
     return X_trans, mean_vecs_trans
 
-
-### End transformToNewSpace ###
 
 class LDA:
     def __init__(self, X, y, n):
@@ -159,45 +117,35 @@ class LDA:
         self.mask = get_mask(self.y, self.unq)
 
     def fit(self):
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore")
-            mean_vectors = computeMeanVec(self.X, self.mask.T)
-            within = computeWithinScatterMatrices(self.X, self.mask, mean_vectors, self.X.shape[1])
-            between = computeBetweenClassScatterMatrices(self.X, self.y, mean_vectors, self.unq, self.X.shape[1])
-            e_val, e_vec, ex_var = computeEigenDecom(within, between)
-            print(f'e_val: {e_val.shape}')
-            print(f'e_vec: {e_vec.shape}')
-            W = FisherLDA.selectFeature(e_val, e_vec, self.n)
-            print(W.shape)
-            print(self.X.shape)
-            red, means_red = transformToNewSpace(self.X, W, mean_vectors)
-            return red
+        mean_vectors = computeMeanVec(self.X, self.mask.T)
+        within = computeWithinScatterMatrices(self.X, self.mask, mean_vectors, self.X.shape[1])
+        between = computeBetweenClassScatterMatrices(self.X, self.y, mean_vectors, self.unq, self.X.shape[1])
+        self.e_val, self.e_vec, self.ex_var = computeEigenDecom(within, between)
+        W = FisherLDA.selectFeature(self.e_val, self.e_vec, self.n)
+        self.red, means_red = transformToNewSpace(self.X, W, mean_vectors)
+        return self.red
 
 
 if __name__ == "__main__":
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore")
-        features = 10
-        samples = 1000
-        classes = 4
-        means = np.array([x+[1]*8 for x in [[1,1],[1,-1],[-1,1],[-1,-1]]])*3
-        red = 2
 
-        X = []
-        y = []
-        for c, mean in zip(range(classes), means):
-            X.append(np.random.normal(mean, size=(samples,features)))
-            y.append(np.full(samples, f'test{c}'))
-        X = np.vstack(X)
-        y = np.concatenate(y)
+    features = 10
+    samples = 1000
+    classes = 4
+    means = np.array([x+[1]*8 for x in [[1,1],[1,-1],[-1,1],[-1,-1]]])*3
+    red = 2
 
-        # X = random.uniform(KEY,(samples, features))
-        # y = random.randint(KEY, (1, samples),  0, classes)[0]
+    X = []
+    y = []
+    for c, mean in zip(range(classes), means):
+        X.append(np.random.normal(mean, size=(samples,features)))
+        y.append(np.full(samples, f'test{c}'))
+    X = np.vstack(X)
+    y = np.concatenate(y)
 
-        model = LDA(X, y, red)
-        dim_red = model.fit()
-        dim_red = pd.DataFrame(dim_red, columns=['x','y'])
-        dim_red['class'] = y
-        sns.scatterplot(dim_red, x='y', y='x', hue='class')
-        plt.show()
-        
+    model = LDA(X, y, red)
+    dim_red = model.fit()
+    dim_red = pd.DataFrame(dim_red, columns=['x','y'])
+    dim_red['class'] = y
+    sns.scatterplot(dim_red, x='y', y='x', hue='class')
+    plt.show()
+    

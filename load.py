@@ -9,12 +9,12 @@ class loader(object):
     def load(self):
         df = pd.read_csv(self.file_name, header = None, sep = self.split_token)
 
-        self.dimension = df.shape[1]-1
-        df.columns = list(range(self.dimension)) + ['label']
+        self.n_features = df.shape[1]-1
+        df.columns = list(range(self.n_features)) + ['label']
         df.dropna(how = 'all', inplace = True) # to drop the empty line at file-end
         df.tail()
 
-        self.X = df[range(self.dimension)].values
+        self.X = df[range(self.n_features)].values
         self.Y = df['label'].values
         distinct_label = list(set(self.Y))
 
